@@ -100,3 +100,4 @@ ${HashedCanonicalRequest}`;
       'X-TC-Region': config.region,
     };
   }
+}

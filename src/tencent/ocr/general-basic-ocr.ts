@@ -84,4 +84,5 @@ export class GeneralBasicOCR {
 
     return response.data;
   }
+}
 

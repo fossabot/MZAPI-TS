@@ -41,7 +41,7 @@ process_file() {
   fi
   
   # 检查文件是否包含secretId或secretKey
-  if grep -qE "(secretId|secretKey)"*"$file"; then
+  if grep -qE "(secretId|secretKey)" "$file"; then
     echo "正在处理文件 $file 中的敏感信息..."
     
     # 创建临时文件
@@ -50,29 +50,42 @@ process_file() {
     # 处理文件
     while IFS= read -r line; do
       # 掩码secretId
-      if echo "$line" | grep -qE "secretId"; then
-        # 提取值
-        if echo "$line" | grep -qE "['\"]"; then
-          # 处理带引号的值
-          value=$(echo "$line" | sed -E "s/.*secretId[^'*"]*['\"]([^'\"]*)['\"].*//")
-          # 检查是否提取到了值
+      if echo "$line" | grep -q "secretId"; then
+        # 尝试提取单引号中的值
+        if echo "$line" | grep -q "'"; then
+** ** ** ** ** ** ** ** ** ** **v**a**l**u**e**=**$**(**e**c**h**o** **"**$**l**i**n**e**"** **|** **s**e**d** **-**E** **"**s**/**.*****s**e**c**r**e**t**I**d**[**^**'*****'**(**[**^**'*****)**'**.*****/****/**"** **2**>**/**d**e**v**/**n**u**l**l**)**
           if [ "$value" != "$line" ]; then
             masked_value=$(mask_secret "$value")
-            line=$(echo "$line" | sed -E "s/(secretId[^'*"]*['\"])[^'\"]*(['\"])/${masked_value}/")
+            # 使用#作为分隔符来避免斜杠冲突
+            line=$(echo "$line" | sed "s#${value}#${masked_value}#g" 2>/dev/null)
+          fi
+        fi
+        # 如果上面没找到值，尝试提取双引号中的值
+        if [ "$value" = "$line" ] || [ -z "$value" ]; then
+** ** ** ** ** ** ** ** ** ** **v**a**l**u**e**=**$**(**e**c**h**o** **"**$**l**i**n**e**"** **|** **s**e**d** **-**E** **'**s**/**.*****s**e**c**r**e**t**I**d**[**^**"*****"**(**[**^**"*****)**"**.*****/****/**'** **2**>**/**d**e**v**/**n**u**l**l**)**
+          if [ "$value" != "$line" ] && [ -n "$value" ]; then
+            masked_value=$(mask_secret "$value")
+            line=$(echo "$line" | sed "s#${value}#${masked_value}#g" 2>/dev/null)
           fi
         fi
       fi
       
       # 掩码secretKey
-      if echo "$line" | grep -qE "secretKey"; then
-        # 提取值
-        if echo "$line" | grep -qE "['\"]"; then
-          # 处理带引号的值
-          value=$(echo "$line" | sed -E "s/.*secretKey[^'*"]*['\"]([^'\"]*)['\"].*//")
-          # 检查是否提取到了值
+      if echo "$line" | grep -q "secretKey"; then
+        # 尝试提取单引号中的值
+        if echo "$line" | grep -q "'"; then
+** ** ** ** ** ** ** ** ** ** **v**a**l**u**e**=**$**(**e**c**h**o** **"**$**l**i**n**e**"** **|** **s**e**d** **-**E** **"**s**/**.*****s**e**c**r**e**t**K**e**y**[**^**'*****'**(**[**^**'*****)**'**.*****/****/**"** **2**>**/**d**e**v**/**n**u**l**l**)**
           if [ "$value" != "$line" ]; then
             masked_value=$(mask_secret "$value")
-            line=$(echo "$line" | sed -E "s/(secretKey[^'*"]*['\"])[^'\"]*(['\"])/${masked_value}/")
+            line=$(echo "$line" | sed "s#${value}#${masked_value}#g" 2>/dev/null)
+          fi
+        fi
+        # 如果上面没找到值，尝试提取双引号中的值
+        if [ "$value" = "$line" ] || [ -z "$value" ]; then
+** ** ** ** ** ** ** ** ** ** **v**a**l**u**e**=**$**(**e**c**h**o** **"**$**l**i**n**e**"** **|** **s**e**d** **-**E** **'**s**/**.*****s**e**c**r**e**t**K**e**y**[**^**"*****"**(**[**^**"*****)**"**.*****/****/**'** **2**>**/**d**e**v**/**n**u**l**l**)**
+          if [ "$value" != "$line" ] && [ -n "$value" ]; then
+            masked_value=$(mask_secret "$value")
+            line=$(echo "$line" | sed "s#${value}#${masked_value}#g" 2>/dev/null)
           fi
         fi
       fi
@@ -98,4 +111,3 @@ for file in $staged_files; do
   fi
 done
 
-echo "预提交钩子执行完成。"

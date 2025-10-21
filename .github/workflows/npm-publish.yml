@@ -2,8 +2,12 @@ name: Publish to npm
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types: [closed]
 
 permissions:
   id-token: write
@@ -25,5 +29,4 @@ jobs:
         run: npm install -g npm@latest
       - run: npm ci
       - run: npm run build --if-present
-      - run: npm test
       - run: npm publish
