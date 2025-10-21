@@ -1,0 +1,73 @@
+# Labeler configuration for Cloud SDK
+# 根据文件路径为PR自动添加标签
+
+# TypeScript源文件标签
+typescript:
+  - src/**/*.ts
+  - src/**/*.tsx
+
+# 测试文件标签
+test:
+  - src/**/*.test.ts
+  - src/**/*.spec.ts
+  - test/**/*.ts
+  - __tests__/**/*.ts
+
+# 文档标签
+documentation:
+  - README.md
+  - docs/**
+  - ./*.md
+
+# 配置文件标签
+configuration:
+  - package.json
+  - tsconfig.json
+  - .github/workflows/*
+  - .github/labeler.yml
+
+# SDK核心功能标签
+sdk-core:
+  - src/index.ts
+  - src/core/**
+  - src/manager/**
+
+# 各大云厂商SDK集成标签
+aws:
+  - src/aws/**
+  - src/providers/aws/**
+
+aliyun:
+  - src/aliyun/**
+  - src/providers/aliyun/**
+
+tencent:
+  - src/tencent/**
+  - src/providers/tencent/**
+
+huawei:
+  - src/huawei/**
+  - src/providers/huawei/**
+
+azure:
+  - src/azure/**
+  - src/providers/azure/**
+
+google:
+  - src/google/**
+  - src/providers/google/**
+
+# 云厂商通用标签
+cloud-providers:
+  - src/providers/**
+  - src/cloud/**
+
+# 工具类标签
+utilities:
+  - src/utils/**
+  - src/helpers/**
+
+# 示例代码标签
+examples:
+  - examples/**
+  - src/examples/**
