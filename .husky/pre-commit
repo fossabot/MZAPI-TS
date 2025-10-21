@@ -1,0 +1,101 @@
+#!/bin/bash
+# Git预提交钩子，用于格式化文件中的secretId和secretKey
+# 此钩子会将secretId和secretKey的值替换为掩码版本
+# 保留前5个字符，其余部分用星号替换
+
+# 检查.git文件夹是否存在
+if [ ! -d ".git" ]; then
+  echo "错误: 未找到.git目录"
+  exit 1
+fi
+
+# 掩码密钥的函数
+mask_secret() {
+  local secret="$1"
+  local length=${#secret}
+  if [ $length -gt 5 ]; then
+    # 提取前5个字符
+    local prefix=$(printf "%s" "$secret" | cut -c1-5)
+    local suffix_length=$((length - 5))
+    local masked_suffix=$(printf '%*s' $suffix_length | tr ' ' '*')
+    echo "${prefix}${masked_suffix}"
+  else
+    # 如果密钥长度小于等于5个字符，则掩码所有字符
+    local masked=$(printf '%*s' $length | tr ' ' '*')
+    echo "$masked"
+  fi
+}
+
+# 处理文件的函数
+process_file() {
+  local file="$1"
+  
+  # 检查文件是否存在且为常规文件
+  if [ ! -f "$file" ]; then
+    return
+  fi
+  
+  # 跳过二进制文件
+  if file --mime "$file" | grep -q "binary"; then
+    return
+  fi
+  
+  # 检查文件是否包含secretId或secretKey
+  if grep -qE "(secretId|secretKey)"*"$file"; then
+    echo "正在处理文件 $file 中的敏感信息..."
+    
+    # 创建临时文件
+    temp_file=$(mktemp)
+    
+    # 处理文件
+    while IFS= read -r line; do
+      # 掩码secretId
+      if echo "$line" | grep -qE "secretId"; then
+        # 提取值
+        if echo "$line" | grep -qE "['\"]"; then
+          # 处理带引号的值
+          value=$(echo "$line" | sed -E "s/.*secretId[^'*"]*['\"]([^'\"]*)['\"].*//")
+          # 检查是否提取到了值
+          if [ "$value" != "$line" ]; then
+            masked_value=$(mask_secret "$value")
+            line=$(echo "$line" | sed -E "s/(secretId[^'*"]*['\"])[^'\"]*(['\"])/${masked_value}/")
+          fi
+        fi
+      fi
+      
+      # 掩码secretKey
+      if echo "$line" | grep -qE "secretKey"; then
+        # 提取值
+        if echo "$line" | grep -qE "['\"]"; then
+          # 处理带引号的值
+          value=$(echo "$line" | sed -E "s/.*secretKey[^'*"]*['\"]([^'\"]*)['\"].*//")
+          # 检查是否提取到了值
+          if [ "$value" != "$line" ]; then
+            masked_value=$(mask_secret "$value")
+            line=$(echo "$line" | sed -E "s/(secretKey[^'*"]*['\"])[^'\"]*(['\"])/${masked_value}/")
+          fi
+        fi
+      fi
+      
+      echo "$line" >> "$temp_file"
+    done < "$file"
+    
+    # 用处理后的文件替换原始文件
+    mv "$temp_file" "$file"
+  fi
+}
+
+# 获取暂存区文件列表
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# 处理每个暂存区文件
+for file in $staged_files; do
+  # 检查文件是否在工作目录中存在
+  if [ -f "$file" ]; then
+    process_file "$file"
+    # 将处理后的文件重新添加到暂存区
+    git add "$file"
+  fi
+done
+
+echo "预提交钩子执行完成。"
