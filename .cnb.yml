@@ -1,0 +1,42 @@
+$:
+  vscode:
+    - runner:
+        cpus: 64
+      services:
+        - vscode
+        - docker
+      docker:
+        image: docker.cnb.cool/xmzzuzhi/cnb-docker/node:0.0.3
+      stages:
+        - name: 授予install_gpg_keys.sh权限
+          script:
+            - chmod +x /workspace/install_gpg_keys.sh
+        - name: 安装sudo更新APT源
+          script:
+            - apt-get update
+            - apt-get install -y sudo
+        - name: 安装iflow
+          script:
+            - npm i -g @iflow-ai/iflow-cli@latest
+        - name: 安装Git LFS
+          script:
+            - sudo apt-get install -y git-lfs
+            - git lfs install
+        - name: 安装Github CLI
+          script:
+            - npm install -g @github/copilot
+        - name: 安装Claude Code
+          script:
+            - npm install -g @anthropic-ai/claude-code
+        - name: 安装OpenAI Code
+          script:
+            - npm install -g @openai/codex
+        - name: 安装Gemini
+          script:
+            - npm install -g @google/gemini-cli
+        - name: 安装Qwen Code
+          script:
+            - npm install -g @qwen-code/qwen-code
+        - name: 安装CloudBase CLI
+          script:
+            - npm i -g @cloudbase/cli
